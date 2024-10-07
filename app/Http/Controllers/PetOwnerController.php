@@ -6,6 +6,7 @@ use App\Models\PetOwner;
 use Illuminate\Http\Request;
 use App\Http\Requests\PetOwnerRequest;
 use App\Http\Resources\PetOwnerResource;
+use App\Http\Resources\AppointmentCollection;
 use App\Http\Resources\PetOwnerCollection;
 use App\Http\Requests\UpdatePetOwnerRequest;
 
@@ -15,7 +16,7 @@ class PetOwnerController extends Controller
     {
         // return new PetOwnerCollection(PetOwner::with('appointments')->orderBy('id','DESC')->paginate(10));
 
-        $query = PetOwner::with('appointments')->orderBy('id', 'DESC');
+        $query = PetOwner::orderBy('id', 'DESC');
 
         if($request->has('name', 'last_name', 'cellphone', 'email')) {
             
@@ -27,6 +28,7 @@ class PetOwnerController extends Controller
         }
 
         $petOwners = $query->paginate(10); 
+        
         return new PetOwnerCollection($petOwners);
     }
 
@@ -46,13 +48,24 @@ class PetOwnerController extends Controller
         ]);
     }
 
-    public function show($id)
+    public function show($id, Request $request)
     {
-        $petOwner = PetOwner::with('appointments')->find($id);
+        //$petOwner = PetOwner::with('appointments')->find($id);
+
+        $petOwner = PetOwner::find($id);
+
+        $appointmentsQuery = $petOwner->appointments()->orderBy('id', 'DESC');
+
+        if ($request->has('day_and_hour')) {
+            $appointmentsQuery->where('day_and_hour', 'LIKE', "%{$request->day_and_hour}%");
+        }
+
+        $appointments = $appointmentsQuery->paginate(10);
 
         if(!empty($petOwner)) {
             return response([
-                'petOwner' => new PetOwnerResource($petOwner)
+                'petOwner' => new PetOwnerResource($petOwner),
+                'appointments' => new AppointmentCollection($appointments)
             ]);
         }
 
