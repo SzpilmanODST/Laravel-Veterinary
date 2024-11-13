@@ -11,9 +11,21 @@ use App\Http\Requests\UpdatePetRequest;
 
 class PetController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return new PetCollection(Pet::all());
+        //return new PetCollection(Pet::all());
+
+        $query = Pet::orderBy('id', 'DESC');
+
+        if($request->has('name', 'breed')) {
+            
+            $query->where('name', 'LIKE', "%{$request->name}%");
+            $query->where('breed', 'LIKE', "%{$request->breed}%");  
+        }
+
+        $pets = $query->paginate(10); 
+        
+        return new PetCollection($pets);
     }
 
     public function store(PetRequest $request)
